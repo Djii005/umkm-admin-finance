@@ -26,7 +26,11 @@ export async function GET() {
     _sum: { amount: true },
   });
 
-  const lowStockCount = await prisma.$queryRaw`SELECT COUNT(*) as count FROM Product WHERE stock <= minStock AND active = 1`;
+  const products = await prisma.product.findMany({
+    where: { active: true },
+    select: { stock: true, minStock: true },
+  });
+  const lowStockCount = products.filter(p => p.stock <= p.minStock).length;
 
   const income = totalIncome._sum.amount || 0;
   const expense = totalExpense._sum.amount || 0;
@@ -43,6 +47,6 @@ export async function GET() {
     totalIncome: income + totalSalesAmount,
     totalExpense: expense,
     profit: income + totalSalesAmount - expense,
-    lowStockCount: Number(lowStockCount[0]?.count || 0),
+    lowStockCount: lowStockCount,
   });
 }
