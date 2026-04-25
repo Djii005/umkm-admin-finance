@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  passwordHash String
+  role         String        @default("STAFF")
+  avatar       String?
+  createdAt    DateTime      @default(now())
+  transactions Transaction[]
+}
+
+model Business {
+  id      Int     @id @default(autoincrement())
+  name    String
+  address String?
+  phone   String?
+  logo    String?
+  taxId   String?
+  taxRate Float   @default(0)
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String
+  type     String    // PRODUCT | EXPENSE | INCOME
+  products Product[]
+  finances Finance[]
+}
+
+model Product {
+  id               Int               @id @default(autoincrement())
+  categoryId       Int
+  category         Category          @relation(fields: [categoryId], references: [id])
+  name             String
+  sku              String            @unique
+  buyPrice         Float             @default(0)
+  sellPrice        Float             @default(0)
+  stock            Int               @default(0)
+  unit             String            @default("pcs")
+  minStock         Int               @default(5)
+  image            String?
+  active           Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  transactionItems TransactionItem[]
+}
+
+model Customer {
+  id           Int           @id @default(autoincrement())
+  name         String
+  phone        String?
+  address      String?
+  transactions Transaction[]
+}
+
+model Supplier {
+  id           Int           @id @default(autoincrement())
+  name         String
+  phone        String?
+  address      String?
+  transactions Transaction[]
+}
+
+model Transaction {
+  id             Int               @id @default(autoincrement())
+  userId         Int
+  user           User              @relation(fields: [userId], references: [id])
+  customerId     Int?
+  customer       Customer?         @relation(fields: [customerId], references: [id])
+  supplierId     Int?
+  supplier       Supplier?         @relation(fields: [supplierId], references: [id])
+  type           String            // SALE | PURCHASE
+  invoiceNo      String            @unique
+  date           DateTime
+  subtotal       Float
+  tax            Float             @default(0)
+  discount       Float             @default(0)
+  total          Float
+  paymentStatus  String            @default("PAID") // PAID | UNPAID
+  paymentMethod  String?
+  notes          String?
+  items          TransactionItem[]
+}
+
+model TransactionItem {
+  id            Int         @id @default(autoincrement())
+  transactionId Int
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  productId     Int
+  product       Product     @relation(fields: [productId], references: [id])
+  qty           Int
+  price         Float
+  subtotal      Float
+}
+
+model Finance {
+  id          Int      @id @default(autoincrement())
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
+  type        String   // INCOME | EXPENSE
+  amount      Float
+  date        DateTime
+  description String?
+  receipt     String?
+}
