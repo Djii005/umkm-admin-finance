@@ -12,6 +12,7 @@ export default function DataTable({
   emptyMessage = 'Tidak ada data',
 }) {
   const [localSearch, setLocalSearch] = useState('');
+  const [externalSearch, setExternalSearch] = useState('');
 
   const filteredData = onSearch
     ? data
@@ -33,10 +34,14 @@ export default function DataTable({
               type="text"
               className="form-control form-control-sm"
               placeholder={searchPlaceholder}
-              value={onSearch ? undefined : localSearch}
+              value={onSearch ? externalSearch : localSearch}
               onChange={(e) => {
-                if (onSearch) onSearch(e.target.value);
-                else setLocalSearch(e.target.value);
+                if (onSearch) {
+                  setExternalSearch(e.target.value);
+                  onSearch(e.target.value);
+                } else {
+                  setLocalSearch(e.target.value);
+                }
               }}
             />
           </div>
