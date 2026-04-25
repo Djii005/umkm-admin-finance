@@ -80,57 +80,85 @@ export default function ReportsPage() {
 
   async function exportExcel() {
     try {
-      const XLSX = await import('xlsx');
-      const wb = XLSX.utils.book_new();
+      const ExcelJS = (await import('exceljs')).default;
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = business?.name || 'UMKM Admin';
+      workbook.created = new Date();
 
       // Summary sheet
-      const summaryData = [
-        ['Laporan Keuangan'],
-        [`Periode: ${formatDate(startDate)} - ${formatDate(endDate)}`],
-        [''],
-        ['Ringkasan'],
-        ['Total Penjualan', totalSales],
-        ['Total Pembelian', totalPurchases],
-        ['Laba Kotor', grossProfit],
-        ['Total Pemasukan Lain', totalIncome],
-        ['Total Pengeluaran', totalExpense],
-        ['Laba Bersih', netProfit],
+      const summarySheet = workbook.addWorksheet('Ringkasan');
+      summarySheet.columns = [
+        { header: 'Keterangan', key: 'label', width: 30 },
+        { header: 'Jumlah (Rp)', key: 'value', width: 20 },
       ];
-      const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
-      XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan');
+      summarySheet.addRow({ label: 'Laporan Keuangan' });
+      summarySheet.addRow({ label: `Periode: ${formatDate(startDate)} - ${formatDate(endDate)}` });
+      summarySheet.addRow({});
+      const summaryRows = [
+        { label: 'Total Penjualan', value: totalSales },
+        { label: 'Total Pembelian', value: totalPurchases },
+        { label: 'Laba Kotor', value: grossProfit },
+        { label: 'Total Pemasukan Lain', value: totalIncome },
+        { label: 'Total Pengeluaran', value: totalExpense },
+        { label: 'Laba Bersih', value: netProfit },
+      ];
+      summaryRows.forEach(row => summarySheet.addRow(row));
+      summarySheet.getRow(1).font = { bold: true, size: 13 };
 
       // Transactions sheet
-      const txHeaders = ['No Invoice', 'Tanggal', 'Tipe', 'Pelanggan/Supplier', 'Subtotal', 'Diskon', 'Pajak', 'Total', 'Status'];
-      const txRows = transactions.map(t => [
-        t.invoiceNo,
-        formatDate(t.date),
-        t.type === 'SALE' ? 'Penjualan' : 'Pembelian',
-        t.customer?.name || t.supplier?.name || '-',
-        t.subtotal || 0,
-        t.discount || 0,
-        t.tax || 0,
-        t.total || 0,
-        t.paymentStatus === 'PAID' ? 'Lunas' : 'Belum Lunas',
-      ]);
-      const wsTx = XLSX.utils.aoa_to_sheet([txHeaders, ...txRows]);
-      XLSX.utils.book_append_sheet(wb, wsTx, 'Transaksi');
+      const txSheet = workbook.addWorksheet('Transaksi');
+      txSheet.columns = [
+        { header: 'No Invoice', key: 'invoiceNo', width: 22 },
+        { header: 'Tanggal', key: 'date', width: 14 },
+        { header: 'Tipe', key: 'type', width: 12 },
+        { header: 'Pelanggan/Supplier', key: 'party', width: 24 },
+        { header: 'Subtotal', key: 'subtotal', width: 16 },
+        { header: 'Diskon', key: 'discount', width: 14 },
+        { header: 'Pajak', key: 'tax', width: 14 },
+        { header: 'Total', key: 'total', width: 16 },
+        { header: 'Status', key: 'status', width: 14 },
+      ];
+      transactions.forEach(t => txSheet.addRow({
+        invoiceNo: t.invoiceNo,
+        date: formatDate(t.date),
+        type: t.type === 'SALE' ? 'Penjualan' : 'Pembelian',
+        party: t.customer?.name || t.supplier?.name || '-',
+        subtotal: t.subtotal || 0,
+        discount: t.discount || 0,
+        tax: t.tax || 0,
+        total: t.total || 0,
+        status: t.paymentStatus === 'PAID' ? 'Lunas' : 'Belum Lunas',
+      }));
+      txSheet.getRow(1).font = { bold: true };
 
       // Finances sheet
-      const finHeaders = ['Tanggal', 'Tipe', 'Kategori', 'Deskripsi', 'Metode', 'Jumlah'];
-      const finRows = finances.map(f => [
-        formatDate(f.date),
-        f.type === 'INCOME' ? 'Pemasukan' : 'Pengeluaran',
-        f.category?.name || '-',
-        f.description || '-',
-        f.paymentMethod || '-',
-        f.amount || 0,
-      ]);
-      const wsFin = XLSX.utils.aoa_to_sheet([finHeaders, ...finRows]);
-      XLSX.utils.book_append_sheet(wb, wsFin, 'Keuangan');
+      const finSheet = workbook.addWorksheet('Keuangan');
+      finSheet.columns = [
+        { header: 'Tanggal', key: 'date', width: 14 },
+        { header: 'Tipe', key: 'type', width: 14 },
+        { header: 'Kategori', key: 'category', width: 20 },
+        { header: 'Deskripsi', key: 'description', width: 30 },
+        { header: 'Jumlah', key: 'amount', width: 16 },
+      ];
+      finances.forEach(f => finSheet.addRow({
+        date: formatDate(f.date),
+        type: f.type === 'INCOME' ? 'Pemasukan' : 'Pengeluaran',
+        category: f.category?.name || '-',
+        description: f.description || '-',
+        amount: f.amount || 0,
+      }));
+      finSheet.getRow(1).font = { bold: true };
 
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
       const safeStart = startDate.replace(/[^0-9-]/g, '');
       const safeEnd = endDate.replace(/[^0-9-]/g, '');
-      XLSX.writeFile(wb, `Laporan_${safeStart}_${safeEnd}.xlsx`);
+      a.href = url;
+      a.download = `Laporan_${safeStart}_${safeEnd}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Export Excel gagal:', err);
     }
