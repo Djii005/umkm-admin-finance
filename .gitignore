@@ -38,6 +38,7 @@ next-env.d.ts
 # Database
 prisma/data.db
 prisma/data.db-journal
+prisma/prisma/
 
 # PWA
 public/workbox-*.js
