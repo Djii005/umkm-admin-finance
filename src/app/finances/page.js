@@ -4,17 +4,8 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import AppShell from '../AppShell';
 import Modal from '@/components/Modal';
+import { formatCurrency, formatDate, toInputDate } from '@/lib/utils';
 import { Plus, Edit2, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
-
-function formatCurrency(n) {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n || 0);
-}
-function formatDate(d) {
-  return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(d));
-}
-function toInputDate(d) {
-  return new Date(d).toISOString().split('T')[0];
-}
 
 export default function FinancesPage() {
   const { status } = useSession();

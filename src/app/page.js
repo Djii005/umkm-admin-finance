@@ -5,15 +5,8 @@ import { useRouter } from 'next/navigation';
 import AppShell from './AppShell';
 import StatCard from '@/components/StatCard';
 import { SalesAreaChart } from '@/components/Chart';
+import { formatCurrency, formatDate } from '@/lib/utils';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, AlertTriangle } from 'lucide-react';
-
-function formatCurrency(n) {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n || 0);
-}
-
-function formatDate(d) {
-  return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(d));
-}
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();

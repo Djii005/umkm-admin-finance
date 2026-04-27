@@ -33,7 +33,7 @@ export default function Sidebar({ collapsed, onToggle }) {
     <>
       <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
-          <div className="sidebar-logo">
+          <div className="sidebar-logo" onClick={collapsed ? onToggle : undefined} style={collapsed ? { cursor: 'pointer' } : undefined}>
             <div className="sidebar-logo-icon">
               <Store size={20} color="white" />
             </div>
