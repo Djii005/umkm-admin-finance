@@ -16,6 +16,7 @@ model User {
   avatar       String?
   createdAt    DateTime      @default(now())
   transactions Transaction[]
+  finances     Finance[]
 }
 
 model Business {
@@ -104,6 +105,8 @@ model TransactionItem {
 
 model Finance {
   id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
   categoryId  Int
   category    Category @relation(fields: [categoryId], references: [id])
   type        String   // INCOME | EXPENSE

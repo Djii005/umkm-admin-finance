@@ -4,12 +4,9 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../AppShell';
 import Modal from '@/components/Modal';
+import { formatCurrency } from '@/lib/utils';
 import { Plus, Minus, ShoppingCart, Printer, CheckCircle, Package } from 'lucide-react';
 import { generateInvoicePDF } from '@/components/InvoicePDF';
-
-function formatCurrency(n) {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n || 0);
-}
 
 export default function NewTransactionPage() {
   const { status } = useSession();

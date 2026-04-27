@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(request, { params }) {
+export async function GET(request, context) {
   const session = await requireAuth();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const { id } = await context.params;
   const transaction = await prisma.transaction.findUnique({
-    where: { id: parseInt(params.id) },
+    where: { id: parseInt(id) },
     include: {
       customer: true,
       supplier: true,
@@ -19,15 +20,16 @@ export async function GET(request, { params }) {
   return NextResponse.json(transaction);
 }
 
-export async function PUT(request, { params }) {
+export async function PUT(request, context) {
   const session = await requireAuth();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
+    const { id } = await context.params;
     const data = await request.json();
     const { paymentStatus, paymentMethod, notes } = data;
     const transaction = await prisma.transaction.update({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(id) },
       data: { paymentStatus, paymentMethod, notes },
       include: {
         customer: true,
@@ -41,13 +43,14 @@ export async function PUT(request, { params }) {
   }
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request, context) {
   const session = await requireAuth();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
+    const { id } = await context.params;
     const transaction = await prisma.transaction.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(id) },
       include: { items: true },
     });
     if (!transaction) return NextResponse.json({ error: 'Transaksi tidak ditemukan' }, { status: 404 });
@@ -67,8 +70,8 @@ export async function DELETE(request, { params }) {
           });
         }
       }
-      await tx.transactionItem.deleteMany({ where: { transactionId: parseInt(params.id) } });
-      await tx.transaction.delete({ where: { id: parseInt(params.id) } });
+      await tx.transactionItem.deleteMany({ where: { transactionId: parseInt(id) } });
+      await tx.transaction.delete({ where: { id: parseInt(id) } });
     });
 
     return NextResponse.json({ message: 'Transaksi berhasil dihapus' });

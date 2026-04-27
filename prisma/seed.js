@@ -556,6 +556,7 @@ async function main() {
   // ─── Finance Entries ───────────────────────────────────────────────────────
   const financeEntries = [
     {
+      userId: owner.id,
       categoryId: sewaUtil.id,
       type: 'EXPENSE',
       amount: 2500000,
@@ -563,6 +564,7 @@ async function main() {
       description: 'Sewa toko bulan ini',
     },
     {
+      userId: owner.id,
       categoryId: sewaUtil.id,
       type: 'EXPENSE',
       amount: 450000,
@@ -570,6 +572,7 @@ async function main() {
       description: 'Tagihan listrik & air',
     },
     {
+      userId: owner.id,
       categoryId: gajiKaryawan.id,
       type: 'EXPENSE',
       amount: 2000000,
@@ -577,6 +580,7 @@ async function main() {
       description: 'Gaji karyawan Siti Rahayu',
     },
     {
+      userId: owner.id,
       categoryId: operasional.id,
       type: 'EXPENSE',
       amount: 350000,
@@ -584,6 +588,7 @@ async function main() {
       description: 'Pembelian alat kebersihan toko',
     },
     {
+      userId: owner.id,
       categoryId: operasional.id,
       type: 'EXPENSE',
       amount: 200000,
@@ -591,6 +596,7 @@ async function main() {
       description: 'Isi bensin motor pengiriman',
     },
     {
+      userId: owner.id,
       categoryId: penjualan.id,
       type: 'INCOME',
       amount: 1500000,
@@ -598,6 +604,7 @@ async function main() {
       description: 'Pendapatan penjualan mingguan ke-1',
     },
     {
+      userId: owner.id,
       categoryId: penjualan.id,
       type: 'INCOME',
       amount: 2300000,
@@ -605,6 +612,7 @@ async function main() {
       description: 'Pendapatan penjualan mingguan ke-2',
     },
     {
+      userId: owner.id,
       categoryId: jasTitipan.id,
       type: 'INCOME',
       amount: 300000,
@@ -612,6 +620,7 @@ async function main() {
       description: 'Komisi titipan produk UMKM lain',
     },
     {
+      userId: owner.id,
       categoryId: penjualan.id,
       type: 'INCOME',
       amount: 1950000,
@@ -619,6 +628,7 @@ async function main() {
       description: 'Pendapatan penjualan mingguan ke-3',
     },
     {
+      userId: owner.id,
       categoryId: pendapatanLain.id,
       type: 'INCOME',
       amount: 500000,

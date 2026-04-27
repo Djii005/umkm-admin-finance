@@ -127,6 +127,11 @@ input, select, textarea { font-family: inherit; }
   min-height: var(--navbar-height);
 }
 
+.sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  padding: 20px 0;
+}
+
 .sidebar-logo {
   display: flex;
   align-items: center;
@@ -170,6 +175,10 @@ input, select, textarea { font-family: inherit; }
   justify-content: center;
   transition: var(--transition);
   flex-shrink: 0;
+}
+
+.sidebar.collapsed .sidebar-toggle {
+  display: none;
 }
 
 .sidebar-toggle:hover {
