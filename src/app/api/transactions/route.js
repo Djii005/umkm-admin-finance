@@ -11,6 +11,7 @@ export async function GET(request) {
   const type = searchParams.get('type');
   const startDate = searchParams.get('startDate');
   const endDate = searchParams.get('endDate');
+  const limit = searchParams.get('limit');
 
   const where = {};
   if (type) where.type = type;
@@ -29,6 +30,7 @@ export async function GET(request) {
       items: { include: { product: true } },
     },
     orderBy: { date: 'desc' },
+    ...(limit ? { take: parseInt(limit, 10) } : {}),
   });
   return NextResponse.json(transactions);
 }

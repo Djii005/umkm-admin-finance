@@ -138,7 +138,3 @@ DATABASE_URL="file:./data.db"           # Path database SQLite (relatif ke prism
 NEXTAUTH_SECRET="random-secret-string"  # Secret untuk JWT (wajib diubah di produksi)
 NEXTAUTH_URL="http://localhost:3000"    # URL aplikasi
 ```
-
-## License
-
-MIT — Lihat file [LICENSE](LICENSE) untuk detail lengkap.

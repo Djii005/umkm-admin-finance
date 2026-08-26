@@ -11,42 +11,43 @@ export async function GET() {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const salesToday = await prisma.transaction.aggregate({
-    where: { type: 'SALE', date: { gte: today, lt: tomorrow } },
-    _sum: { total: true },
-  });
-
-  const totalIncome = await prisma.finance.aggregate({
-    where: { type: 'INCOME' },
-    _sum: { amount: true },
-  });
-
-  const totalExpense = await prisma.finance.aggregate({
-    where: { type: 'EXPENSE' },
-    _sum: { amount: true },
-  });
-
-  const products = await prisma.product.findMany({
-    where: { active: true },
-    select: { stock: true, minStock: true },
-  });
-  const lowStockCount = products.filter(p => p.stock <= p.minStock).length;
+  const [salesToday, totalIncome, totalExpense, lowStockRows, totalSales] = await Promise.all([
+    prisma.transaction.aggregate({
+      where: { type: 'SALE', date: { gte: today, lt: tomorrow } },
+      _sum: { total: true },
+    }),
+    prisma.finance.aggregate({
+      where: { type: 'INCOME' },
+      _sum: { amount: true },
+    }),
+    prisma.finance.aggregate({
+      where: { type: 'EXPENSE' },
+      _sum: { amount: true },
+    }),
+    prisma.$queryRaw`
+      SELECT id, name, unit, stock, "minStock", COUNT(*) OVER() AS "totalCount"
+      FROM "Product"
+      WHERE active = true AND stock <= "minStock"
+      ORDER BY stock ASC
+      LIMIT 5
+    `,
+    prisma.transaction.aggregate({
+      where: { type: 'SALE' },
+      _sum: { total: true },
+    }),
+  ]);
 
   const income = totalIncome._sum.amount || 0;
   const expense = totalExpense._sum.amount || 0;
-
-  const totalSales = await prisma.transaction.aggregate({
-    where: { type: 'SALE' },
-    _sum: { total: true },
-  });
-
   const totalSalesAmount = totalSales._sum.total || 0;
+  const lowStockCount = lowStockRows.length ? Number(lowStockRows[0].totalCount) : 0;
 
   return NextResponse.json({
     salesToday: salesToday._sum.total || 0,
     totalIncome: income + totalSalesAmount,
     totalExpense: expense,
     profit: income + totalSalesAmount - expense,
-    lowStockCount: lowStockCount,
+    lowStockProducts: lowStockRows.map(({ totalCount, ...p }) => p),
+    lowStockCount,
   });
 }

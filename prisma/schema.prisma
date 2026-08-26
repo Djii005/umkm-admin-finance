@@ -53,6 +53,9 @@ model Product {
   active           Boolean           @default(true)
   createdAt        DateTime          @default(now())
   transactionItems TransactionItem[]
+
+  @@index([categoryId])
+  @@index([active])
 }
 
 model Customer {
@@ -91,6 +94,11 @@ model Transaction {
   paymentMethod  String?
   notes          String?
   items          TransactionItem[]
+
+  @@index([type, date])
+  @@index([userId])
+  @@index([customerId])
+  @@index([supplierId])
 }
 
 model TransactionItem {
@@ -102,6 +110,9 @@ model TransactionItem {
   qty           Int
   price         Float
   subtotal      Float
+
+  @@index([transactionId])
+  @@index([productId])
 }
 
 model Finance {
@@ -115,4 +126,8 @@ model Finance {
   date        DateTime
   description String?
   receipt     String?
+
+  @@index([type, date])
+  @@index([categoryId])
+  @@index([userId])
 }
