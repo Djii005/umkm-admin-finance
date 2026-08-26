@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Store, UserPlus } from 'lucide-react';
+import Image from 'next/image';
+import { UserPlus } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -42,7 +43,7 @@ export default function RegisterPage() {
       <div className="auth-card">
         <div className="auth-logo">
           <div className="auth-logo-icon">
-            <Store size={24} color="white" />
+            <Image src="/logo.png" alt="Logo UMKM Admin" width={36} height={36} style={{ objectFit: 'contain' }} priority />
           </div>
           <span style={{ fontSize: 20, fontWeight: 700 }}>UMKM Admin</span>
         </div>

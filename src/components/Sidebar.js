@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 import {
   LayoutDashboard,
   Package,
@@ -12,7 +13,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Store,
 } from 'lucide-react';
 
 const navItems = [
@@ -35,7 +35,7 @@ export default function Sidebar({ collapsed, onToggle }) {
         <div className="sidebar-header">
           <div className="sidebar-logo" onClick={collapsed ? onToggle : undefined} style={collapsed ? { cursor: 'pointer' } : undefined}>
             <div className="sidebar-logo-icon">
-              <Store size={20} color="white" />
+              <Image src="/logo.png" alt="Logo UMKM Admin" width={28} height={28} style={{ objectFit: 'contain' }} priority />
             </div>
             <span className="sidebar-logo-text">UMKM Admin</span>
           </div>
