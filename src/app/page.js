@@ -31,22 +31,20 @@ export default function DashboardPage() {
   async function loadData() {
     setLoading(true);
     try {
-      const [statsRes, chartRes, topRes, transRes, productsRes] = await Promise.all([
+      const [statsRes, chartRes, topRes, transRes] = await Promise.all([
         fetch('/api/dashboard/stats'),
         fetch('/api/dashboard/charts'),
         fetch('/api/dashboard/top-products'),
-        fetch('/api/transactions?type=SALE'),
-        fetch('/api/products'),
+        fetch('/api/transactions?type=SALE&limit=5'),
       ]);
-      const [statsData, chartData, topData, transData, productsData] = await Promise.all([
-        statsRes.json(), chartRes.json(), topRes.json(), transRes.json(), productsRes.json(),
+      const [statsData, chartData, topData, transData] = await Promise.all([
+        statsRes.json(), chartRes.json(), topRes.json(), transRes.json(),
       ]);
       setStats(statsData);
       setChartData(chartData);
       setTopProducts(topData);
-      setRecentTransactions(Array.isArray(transData) ? transData.slice(0, 5) : []);
-      const low = Array.isArray(productsData) ? productsData.filter(p => p.stock <= p.minStock && p.active) : [];
-      setLowStock(low);
+      setRecentTransactions(Array.isArray(transData) ? transData : []);
+      setLowStock(Array.isArray(statsData?.lowStockProducts) ? statsData.lowStockProducts : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -67,7 +65,7 @@ export default function DashboardPage() {
       {lowStock.length > 0 && (
         <div className="alert alert-warning" style={{ marginBottom: 20 }}>
           <AlertTriangle size={16} />
-          <span><strong>{lowStock.length} produk</strong> memiliki stok rendah: {lowStock.slice(0, 3).map(p => p.name).join(', ')}{lowStock.length > 3 ? ` +${lowStock.length - 3} lainnya` : ''}</span>
+          <span><strong>{stats?.lowStockCount ?? lowStock.length} produk</strong> memiliki stok rendah: {lowStock.slice(0, 3).map(p => p.name).join(', ')}{(stats?.lowStockCount ?? lowStock.length) > 3 ? ` +${(stats?.lowStockCount ?? lowStock.length) - 3} lainnya` : ''}</span>
         </div>
       )}
 

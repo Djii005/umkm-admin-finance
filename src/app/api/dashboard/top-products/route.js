@@ -14,12 +14,14 @@ export async function GET() {
     where: { transaction: { type: 'SALE' } },
   });
 
-  const products = await Promise.all(
-    topItems.map(async (item) => {
-      const product = await prisma.product.findUnique({ where: { id: item.productId } });
-      return { ...product, totalQty: item._sum.qty };
-    })
-  );
+  const productList = await prisma.product.findMany({
+    where: { id: { in: topItems.map((item) => item.productId) } },
+  });
+  const productsById = new Map(productList.map((p) => [p.id, p]));
+  const products = topItems.map((item) => ({
+    ...productsById.get(item.productId),
+    totalQty: item._sum.qty,
+  }));
 
   return NextResponse.json(products);
 }
