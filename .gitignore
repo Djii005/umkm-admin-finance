@@ -48,3 +48,9 @@ public/fallback-*.js
 public/worker-*.js
 public/*_buildManifest.js
 public/*_ssgManifest.js
+
+# Temp & docs
+thesis/
+scratch/
+test_kroki.png
+/logo.png

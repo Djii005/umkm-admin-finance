@@ -143,13 +143,15 @@ input, select, textarea { font-family: inherit; }
 .sidebar-logo-icon {
   width: 36px;
   height: 36px;
-  background: var(--blue-600);
+  background: #ffffff;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: var(--shadow-blue);
+  box-shadow: var(--shadow-sm);
+  padding: 3px;
+  overflow: hidden;
 }
 
 .sidebar-logo-text {
@@ -959,12 +961,14 @@ select.form-control {
 .auth-logo-icon {
   width: 44px;
   height: 44px;
-  background: var(--blue-600);
+  background: #ffffff;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-blue);
+  box-shadow: var(--shadow-sm);
+  padding: 4px;
+  overflow: hidden;
 }
 
 .auth-title {
