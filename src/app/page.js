@@ -41,9 +41,9 @@ export default function DashboardPage() {
       const [statsData, chartData, topData, transData, productsData] = await Promise.all([
         statsRes.json(), chartRes.json(), topRes.json(), transRes.json(), productsRes.json(),
       ]);
-      setStats(statsData);
-      setChartData(chartData);
-      setTopProducts(topData);
+      setStats(statsData && !statsData.error ? statsData : null);
+      setChartData(Array.isArray(chartData) ? chartData : []);
+      setTopProducts(Array.isArray(topData) ? topData : []);
       setRecentTransactions(Array.isArray(transData) ? transData.slice(0, 5) : []);
       const low = Array.isArray(productsData) ? productsData.filter(p => p.stock <= p.minStock && p.active) : [];
       setLowStock(low);
@@ -86,18 +86,18 @@ export default function DashboardPage() {
         <div className="card">
           <h3 className="card-title">5 Produk Terlaris</h3>
           <div className="recent-list">
-            {topProducts.length === 0 ? (
+            {!Array.isArray(topProducts) || topProducts.length === 0 ? (
               <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Belum ada data penjualan</p>
             ) : topProducts.map((p, i) => (
-              <div key={p.id} className="recent-item">
+              <div key={p?.id || i} className="recent-item">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ width: 24, height: 24, background: 'var(--bg-tertiary)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--blue-400)' }}>{i + 1}</span>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 500 }}>{p.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.unit}</div>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>{p?.name || 'Produk'}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p?.unit || 'pcs'}</div>
                   </div>
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--blue-400)' }}>{p.totalQty} terjual</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--blue-400)' }}>{p?.totalQty || 0} terjual</span>
               </div>
             ))}
           </div>

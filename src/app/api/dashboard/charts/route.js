@@ -10,33 +10,49 @@ export async function GET() {
   for (let i = 5; i >= 0; i--) {
     const d = new Date();
     d.setDate(1);
+    d.setHours(0, 0, 0, 0);
     d.setMonth(d.getMonth() - i);
     months.push(d);
   }
 
-  const data = await Promise.all(
-    months.map(async (monthStart) => {
-      const monthEnd = new Date(monthStart);
-      monthEnd.setMonth(monthEnd.getMonth() + 1);
+  const startDate = months[0];
 
-      const sales = await prisma.transaction.aggregate({
-        where: { type: 'SALE', date: { gte: monthStart, lt: monthEnd } },
-        _sum: { total: true },
-      });
+  const [salesList, expensesList] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { type: 'SALE', date: { gte: startDate } },
+      select: { date: true, total: true },
+    }),
+    prisma.finance.findMany({
+      where: { type: 'EXPENSE', date: { gte: startDate } },
+      select: { date: true, amount: true },
+    }),
+  ]);
 
-      const expenses = await prisma.finance.aggregate({
-        where: { type: 'EXPENSE', date: { gte: monthStart, lt: monthEnd } },
-        _sum: { amount: true },
-      });
+  const data = months.map((monthStart) => {
+    const monthEnd = new Date(monthStart);
+    monthEnd.setMonth(monthEnd.getMonth() + 1);
 
-      const label = monthStart.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' });
-      return {
-        month: label,
-        penjualan: sales._sum.total || 0,
-        pengeluaran: expenses._sum.amount || 0,
-      };
-    })
-  );
+    const monthSales = salesList
+      .filter((s) => {
+        const d = new Date(s.date);
+        return d >= monthStart && d < monthEnd;
+      })
+      .reduce((sum, s) => sum + (s.total || 0), 0);
+
+    const monthExpenses = expensesList
+      .filter((e) => {
+        const d = new Date(e.date);
+        return d >= monthStart && d < monthEnd;
+      })
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+    const label = monthStart.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' });
+    return {
+      month: label,
+      penjualan: monthSales,
+      pengeluaran: monthExpenses,
+    };
+  });
 
   return NextResponse.json(data);
 }

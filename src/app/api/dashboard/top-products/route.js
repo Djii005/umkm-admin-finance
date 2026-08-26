@@ -14,12 +14,22 @@ export async function GET() {
     where: { transaction: { type: 'SALE' } },
   });
 
-  const products = await Promise.all(
-    topItems.map(async (item) => {
-      const product = await prisma.product.findUnique({ where: { id: item.productId } });
+  if (!topItems.length) return NextResponse.json([]);
+
+  const productIds = topItems.map((item) => item.productId).filter(Boolean);
+  const products = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+  });
+
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  const result = topItems
+    .map((item) => {
+      const product = productMap.get(item.productId);
+      if (!product) return null;
       return { ...product, totalQty: item._sum.qty };
     })
-  );
+    .filter(Boolean);
 
-  return NextResponse.json(products);
+  return NextResponse.json(result);
 }

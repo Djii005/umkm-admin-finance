@@ -33,7 +33,7 @@ export const authOptions = {
     },
   },
   pages: { signIn: '/login' },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || 'umkm-admin-finance-secret-key-fallback-2026',
 };
 
 export async function requireAuth() {
