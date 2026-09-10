@@ -522,6 +522,16 @@ input, select, textarea { font-family: inherit; }
   background: rgba(239, 68, 68, 0.2);
 }
 
+.btn-success {
+  background: rgba(16, 185, 129, 0.1);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.btn-success:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.2);
+}
+
 .btn-ghost {
   background: transparent;
   color: var(--text-secondary);

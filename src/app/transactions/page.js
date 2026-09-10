@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import AppShell from '../AppShell';
 import Modal from '@/components/Modal';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Plus, Eye, Printer } from 'lucide-react';
+import { Plus, Eye, Printer, CheckCircle } from 'lucide-react';
 import { generateInvoicePDF } from '@/components/InvoicePDF';
 import Link from 'next/link';
 
@@ -15,6 +15,7 @@ export default function TransactionsPage() {
   const [tab, setTab] = useState('SALE');
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState(null);
   const [detailModal, setDetailModal] = useState({ open: false, transaction: null });
   const [business, setBusiness] = useState(null);
 
@@ -54,6 +55,33 @@ export default function TransactionsPage() {
       const data = await res.json();
       setDetailModal({ open: true, transaction: data });
     } catch {}
+  }
+
+  async function handleMarkPaid(id) {
+    if (!confirm('Tandai transaksi ini sebagai LUNAS?')) return;
+    setUpdatingId(id);
+    try {
+      const res = await fetch(`/api/transactions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentStatus: 'PAID' }),
+      });
+      if (!res.ok) {
+        alert('Gagal mengubah status transaksi');
+        return;
+      }
+      await loadData();
+      if (detailModal.open && detailModal.transaction?.id === id) {
+        setDetailModal(prev => ({
+          ...prev,
+          transaction: { ...prev.transaction, paymentStatus: 'PAID' },
+        }));
+      }
+    } catch {
+      alert('Terjadi kesalahan koneksi');
+    } finally {
+      setUpdatingId(null);
+    }
   }
 
   return (
@@ -113,6 +141,17 @@ export default function TransactionsPage() {
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button className="btn btn-ghost btn-icon btn-sm" onClick={() => viewDetail(t.id)} title="Detail"><Eye size={14} /></button>
                         <button className="btn btn-ghost btn-icon btn-sm" onClick={() => generateInvoicePDF({ ...t, items: t.items || [] }, business)} title="Cetak"><Printer size={14} /></button>
+                        {t.paymentStatus !== 'PAID' && (
+                          <button
+                            className="btn btn-ghost btn-icon btn-sm"
+                            style={{ color: '#10b981' }}
+                            onClick={() => handleMarkPaid(t.id)}
+                            disabled={updatingId === t.id}
+                            title="Tandai Lunas"
+                          >
+                            <CheckCircle size={14} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -193,6 +232,15 @@ export default function TransactionsPage() {
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setDetailModal({ open: false, transaction: null })}>Tutup</button>
+              {detailModal.transaction.paymentStatus !== 'PAID' && (
+                <button
+                  className="btn btn-success"
+                  onClick={() => handleMarkPaid(detailModal.transaction.id)}
+                  disabled={updatingId === detailModal.transaction.id}
+                >
+                  <CheckCircle size={14} /> {updatingId === detailModal.transaction.id ? 'Memproses...' : 'Tandai Lunas'}
+                </button>
+              )}
               <button className="btn btn-primary" onClick={() => generateInvoicePDF(detailModal.transaction, business)}>
                 <Printer size={14} /> Cetak Invoice
               </button>
