@@ -32,9 +32,19 @@ export async function DELETE(request, context) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const { id } = await context.params;
-    await prisma.supplier.delete({ where: { id: parseInt(id) } });
+    const supplierId = parseInt(id);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.transaction.updateMany({
+        where: { supplierId },
+        data: { supplierId: null },
+      });
+      await tx.supplier.delete({ where: { id: supplierId } });
+    });
+
     return NextResponse.json({ message: 'Pemasok berhasil dihapus' });
   } catch (error) {
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    console.error('DELETE supplier error:', error);
+    return NextResponse.json({ error: error.message || 'Terjadi kesalahan server' }, { status: 500 });
   }
 }

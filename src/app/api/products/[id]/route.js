@@ -50,9 +50,30 @@ export async function DELETE(request, context) {
 
   try {
     const { id } = await context.params;
-    await prisma.product.delete({ where: { id: parseInt(id) } });
+    const productId = parseInt(id);
+    const { searchParams } = new URL(request.url);
+    const force = searchParams.get('force') === 'true';
+
+    const txCount = await prisma.transactionItem.count({ where: { productId } });
+
+    if (txCount > 0 && !force) {
+      return NextResponse.json({
+        hasTransactions: true,
+        txCount,
+        error: `Produk ini memiliki riwayat transaksi (${txCount} item). Menonaktifkan produk direkomendasikan agar riwayat penjualan tidak hilang.`,
+      }, { status: 400 });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      if (txCount > 0) {
+        await tx.transactionItem.deleteMany({ where: { productId } });
+      }
+      await tx.product.delete({ where: { id: productId } });
+    });
+
     return NextResponse.json({ message: 'Produk berhasil dihapus' });
   } catch (error) {
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    console.error('DELETE product error:', error);
+    return NextResponse.json({ error: error.message || 'Terjadi kesalahan server' }, { status: 500 });
   }
 }

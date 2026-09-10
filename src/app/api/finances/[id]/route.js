@@ -50,6 +50,7 @@ export async function DELETE(request, context) {
     await prisma.finance.delete({ where: { id: parseInt(id) } });
     return NextResponse.json({ message: 'Data keuangan berhasil dihapus' });
   } catch (error) {
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    console.error('DELETE finance error:', error);
+    return NextResponse.json({ error: error.message || 'Terjadi kesalahan server' }, { status: 500 });
   }
 }

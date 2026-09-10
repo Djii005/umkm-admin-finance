@@ -16,7 +16,8 @@ export default function ProductsPage() {
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState('');
   const [modal, setModal] = useState({ open: false, mode: 'add', data: null });
-  const [deleteModal, setDeleteModal] = useState({ open: false, product: null });
+  const [deleteModal, setDeleteModal] = useState({ open: false, product: null, hasTransactions: false, error: '' });
+  const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({ name: '', sku: '', categoryId: '', buyPrice: '', sellPrice: '', stock: '0', unit: 'pcs', minStock: '5', image: '', active: true });
@@ -89,13 +90,55 @@ export default function ProductsPage() {
     }
   }
 
-  async function handleDelete() {
+  async function handleDelete(force = false) {
     if (!deleteModal.product) return;
+    setDeleting(true);
     try {
-      await fetch(`/api/products/${deleteModal.product.id}`, { method: 'DELETE' });
-      setDeleteModal({ open: false, product: null });
+      const url = force ? `/api/products/${deleteModal.product.id}?force=true` : `/api/products/${deleteModal.product.id}`;
+      const res = await fetch(url, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.hasTransactions) {
+          setDeleteModal(prev => ({
+            ...prev,
+            hasTransactions: true,
+            error: data.error,
+          }));
+          return;
+        }
+        alert(data.error || 'Gagal menghapus produk');
+        return;
+      }
+      setDeleteModal({ open: false, product: null, hasTransactions: false, error: '' });
       loadData();
-    } catch {}
+    } catch {
+      alert('Terjadi kesalahan koneksi');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function handleDeactivate() {
+    if (!deleteModal.product) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/products/${deleteModal.product.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...deleteModal.product, active: false }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || 'Gagal menonaktifkan produk');
+        return;
+      }
+      setDeleteModal({ open: false, product: null, hasTransactions: false, error: '' });
+      loadData();
+    } catch {
+      alert('Terjadi kesalahan koneksi');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -247,13 +290,31 @@ export default function ProductsPage() {
       </Modal>
 
       {/* Delete Confirm */}
-      <Modal isOpen={deleteModal.open} onClose={() => setDeleteModal({ open: false, product: null })} title="Hapus Produk">
+      <Modal isOpen={deleteModal.open} onClose={() => setDeleteModal({ open: false, product: null, hasTransactions: false, error: '' })} title="Hapus Produk">
         <div className="modal-body">
           <p>Apakah Anda yakin ingin menghapus produk <strong>{deleteModal.product?.name}</strong>?</p>
+          {deleteModal.error && (
+            <div className="alert alert-warning" style={{ marginTop: 12, fontSize: 13, lineHeight: 1.5 }}>
+              {deleteModal.error}
+            </div>
+          )}
         </div>
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={() => setDeleteModal({ open: false, product: null })}>Batal</button>
-          <button className="btn btn-danger" onClick={handleDelete}>Hapus</button>
+          <button className="btn btn-secondary" onClick={() => setDeleteModal({ open: false, product: null, hasTransactions: false, error: '' })} disabled={deleting}>Batal</button>
+          {deleteModal.hasTransactions ? (
+            <>
+              <button className="btn btn-warning" onClick={handleDeactivate} disabled={deleting}>
+                {deleting ? 'Memproses...' : 'Nonaktifkan Saja'}
+              </button>
+              <button className="btn btn-danger" onClick={() => handleDelete(true)} disabled={deleting}>
+                {deleting ? 'Menghapus...' : 'Hapus Paksa'}
+              </button>
+            </>
+          ) : (
+            <button className="btn btn-danger" onClick={() => handleDelete(false)} disabled={deleting}>
+              {deleting ? 'Menghapus...' : 'Hapus'}
+            </button>
+          )}
         </div>
       </Modal>
     </AppShell>

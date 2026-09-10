@@ -29,9 +29,26 @@ export async function DELETE(request, context) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const { id } = await context.params;
-    await prisma.category.delete({ where: { id: parseInt(id) } });
+    const categoryId = parseInt(id);
+
+    const [prodCount, finCount] = await Promise.all([
+      prisma.product.count({ where: { categoryId } }),
+      prisma.finance.count({ where: { categoryId } }),
+    ]);
+
+    if (prodCount > 0 || finCount > 0) {
+      const parts = [];
+      if (prodCount > 0) parts.push(`${prodCount} produk`);
+      if (finCount > 0) parts.push(`${finCount} catatan keuangan`);
+      return NextResponse.json({
+        error: `Kategori tidak dapat dihapus karena masih digunakan oleh ${parts.join(' dan ')}.`,
+      }, { status: 400 });
+    }
+
+    await prisma.category.delete({ where: { id: categoryId } });
     return NextResponse.json({ message: 'Kategori berhasil dihapus' });
   } catch (error) {
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    console.error('DELETE category error:', error);
+    return NextResponse.json({ error: error.message || 'Terjadi kesalahan server' }, { status: 500 });
   }
 }

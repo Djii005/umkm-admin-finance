@@ -84,13 +84,25 @@ export default function SuppliersPage() {
     }
   }
 
+  const [deleting, setDeleting] = useState(false);
+
   async function handleDelete() {
     if (!deleteModal.supplier) return;
+    setDeleting(true);
     try {
-      await fetch(`/api/suppliers/${deleteModal.supplier.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/suppliers/${deleteModal.supplier.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Gagal menghapus pemasok');
+        return;
+      }
       setDeleteModal({ open: false, supplier: null });
       loadData();
-    } catch {}
+    } catch {
+      alert('Terjadi kesalahan koneksi');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -203,8 +215,10 @@ export default function SuppliersPage() {
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 8 }}>Tindakan ini tidak dapat dibatalkan.</p>
         </div>
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={() => setDeleteModal({ open: false, supplier: null })}>Batal</button>
-          <button className="btn btn-danger" onClick={handleDelete}>Hapus</button>
+          <button className="btn btn-secondary" onClick={() => setDeleteModal({ open: false, supplier: null })} disabled={deleting}>Batal</button>
+          <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
+            {deleting ? 'Menghapus...' : 'Hapus'}
+          </button>
         </div>
       </Modal>
     </AppShell>

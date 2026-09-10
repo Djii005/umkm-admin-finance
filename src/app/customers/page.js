@@ -78,13 +78,25 @@ export default function CustomersPage() {
     }
   }
 
+  const [deleting, setDeleting] = useState(false);
+
   async function handleDelete() {
     if (!deleteModal.customer) return;
+    setDeleting(true);
     try {
-      await fetch(`/api/customers/${deleteModal.customer.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/customers/${deleteModal.customer.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Gagal menghapus pelanggan');
+        return;
+      }
       setDeleteModal({ open: false, customer: null });
       loadData();
-    } catch {}
+    } catch {
+      alert('Terjadi kesalahan koneksi');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -189,8 +201,10 @@ export default function CustomersPage() {
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 8 }}>Tindakan ini tidak dapat dibatalkan.</p>
         </div>
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={() => setDeleteModal({ open: false, customer: null })}>Batal</button>
-          <button className="btn btn-danger" onClick={handleDelete}>Hapus</button>
+          <button className="btn btn-secondary" onClick={() => setDeleteModal({ open: false, customer: null })} disabled={deleting}>Batal</button>
+          <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
+            {deleting ? 'Menghapus...' : 'Hapus'}
+          </button>
         </div>
       </Modal>
     </AppShell>

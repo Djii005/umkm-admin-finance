@@ -119,17 +119,19 @@ input, select, textarea { font-family: inherit; }
 }
 
 .sidebar-header {
+  height: var(--navbar-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 16px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--border-color);
-  min-height: var(--navbar-height);
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .sidebar.collapsed .sidebar-header {
   justify-content: center;
-  padding: 20px 0;
+  padding: 0;
 }
 
 .sidebar-logo {
@@ -926,6 +928,7 @@ select.form-control {
 .chart-container {
   width: 100%;
   height: 300px;
+  min-width: 0;
 }
 
 /* ===== Login / Register Page ===== */

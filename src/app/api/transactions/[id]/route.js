@@ -58,15 +58,15 @@ export async function DELETE(request, context) {
     await prisma.$transaction(async (tx) => {
       // Revert stock changes
       for (const item of transaction.items) {
-        if (transaction.type === 'SALE') {
+        const prod = await tx.product.findUnique({ where: { id: item.productId } });
+        if (prod) {
           await tx.product.update({
             where: { id: item.productId },
-            data: { stock: { increment: item.qty } },
-          });
-        } else {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: { stock: { decrement: item.qty } },
+            data: {
+              stock: {
+                increment: transaction.type === 'SALE' ? item.qty : -item.qty,
+              },
+            },
           });
         }
       }
@@ -76,7 +76,7 @@ export async function DELETE(request, context) {
 
     return NextResponse.json({ message: 'Transaksi berhasil dihapus' });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    console.error('DELETE transaction error:', error);
+    return NextResponse.json({ error: error.message || 'Terjadi kesalahan server' }, { status: 500 });
   }
 }

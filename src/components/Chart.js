@@ -1,4 +1,5 @@
 'use client';
+import { useState, useEffect } from 'react';
 import {
   AreaChart,
   Area,
@@ -43,9 +44,18 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export function SalesAreaChart({ data }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="chart-container" style={{ width: '100%', height: 300, minWidth: 0 }} />;
+  }
+
   return (
-    <div className="chart-container">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="chart-container" style={{ width: '100%', height: 300, minWidth: 0 }}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} initialDimension={{ width: 500, height: 300 }}>
         <AreaChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
           <defs>
             <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
@@ -103,9 +113,18 @@ export function SalesAreaChart({ data }) {
 }
 
 export function TopProductsChart({ data }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="chart-container" style={{ width: '100%', height: 300, minWidth: 0 }} />;
+  }
+
   return (
-    <div className="chart-container">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="chart-container" style={{ width: '100%', height: 300, minWidth: 0 }}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} initialDimension={{ width: 500, height: 300 }}>
         <BarChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
           <defs>
             <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">

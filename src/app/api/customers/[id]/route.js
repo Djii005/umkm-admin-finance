@@ -32,9 +32,19 @@ export async function DELETE(request, context) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const { id } = await context.params;
-    await prisma.customer.delete({ where: { id: parseInt(id) } });
+    const customerId = parseInt(id);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.transaction.updateMany({
+        where: { customerId },
+        data: { customerId: null },
+      });
+      await tx.customer.delete({ where: { id: customerId } });
+    });
+
     return NextResponse.json({ message: 'Pelanggan berhasil dihapus' });
   } catch (error) {
-    return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });
+    console.error('DELETE customer error:', error);
+    return NextResponse.json({ error: error.message || 'Terjadi kesalahan server' }, { status: 500 });
   }
 }

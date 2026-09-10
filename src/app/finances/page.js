@@ -101,13 +101,25 @@ export default function FinancesPage() {
     }
   }
 
+  const [deleting, setDeleting] = useState(false);
+
   async function handleDelete() {
     if (!deleteModal.item) return;
+    setDeleting(true);
     try {
-      await fetch(`/api/finances/${deleteModal.item.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/finances/${deleteModal.item.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Gagal menghapus data keuangan');
+        return;
+      }
       setDeleteModal({ open: false, item: null });
       loadData();
-    } catch {}
+    } catch {
+      alert('Terjadi kesalahan koneksi');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   const totalAmount = finances.reduce((sum, f) => sum + (f.amount || 0), 0);
@@ -245,8 +257,10 @@ export default function FinancesPage() {
           <p>Apakah Anda yakin ingin menghapus entri <strong>{deleteModal.item?.description || 'ini'}</strong>?</p>
         </div>
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={() => setDeleteModal({ open: false, item: null })}>Batal</button>
-          <button className="btn btn-danger" onClick={handleDelete}>Hapus</button>
+          <button className="btn btn-secondary" onClick={() => setDeleteModal({ open: false, item: null })} disabled={deleting}>Batal</button>
+          <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
+            {deleting ? 'Menghapus...' : 'Hapus'}
+          </button>
         </div>
       </Modal>
     </AppShell>

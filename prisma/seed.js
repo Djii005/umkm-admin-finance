@@ -20,6 +20,18 @@ function daysAgo(n) {
 async function main() {
   console.log('🌱 Starting seed...');
 
+  console.log('🧹 Cleaning old data...');
+  await prisma.transactionItem.deleteMany();
+  await prisma.transaction.deleteMany();
+  await prisma.finance.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.category.deleteMany();
+  await prisma.customer.deleteMany();
+  await prisma.supplier.deleteMany();
+  await prisma.business.deleteMany();
+  await prisma.user.deleteMany();
+  console.log('✨ Old data cleared');
+
   // ─── Users ────────────────────────────────────────────────────────────────
   const ownerHash = await bcrypt.hash('password123', SALT_ROUNDS);
   const staffHash = await bcrypt.hash('password123', SALT_ROUNDS);
