@@ -176,16 +176,16 @@ export default function NewTransactionPage() {
               </div>
             ) : cart.map(item => (
               <div key={item.productId} className="pos-cart-item">
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>{item.name}</div>
+                <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, wordBreak: 'break-word' }}>{item.name}</div>
                   <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{formatCurrency(item.price)}</div>
                 </div>
-                <div className="cart-qty-control">
+                <div className="cart-qty-control" style={{ flexShrink: 0 }}>
                   <button className="cart-qty-btn" onClick={() => updateQty(item.productId, -1)}>−</button>
                   <span style={{ fontSize: 14, fontWeight: 600, minWidth: 24, textAlign: 'center' }}>{item.qty}</span>
                   <button className="cart-qty-btn" onClick={() => updateQty(item.productId, 1)}>+</button>
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 600, minWidth: 80, textAlign: 'right' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, minWidth: 80, textAlign: 'right', flexShrink: 0 }}>
                   {formatCurrency(item.price * item.qty)}
                 </span>
               </div>
