@@ -16,16 +16,14 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [batchUpdating, setBatchUpdating] = useState(false);
   const [detailModal, setDetailModal] = useState({ open: false, transaction: null });
+  const [confirmModal, setConfirmModal] = useState({ open: false, transaction: null });
   const [business, setBusiness] = useState(null);
 
   useEffect(() => { if (status === 'unauthenticated') router.push('/login'); }, [status, router]);
 
   useEffect(() => {
     if (status === 'authenticated') {
-      setSelectedIds([]);
       loadData();
       loadBusiness();
     }
@@ -60,71 +58,31 @@ export default function TransactionsPage() {
     } catch {}
   }
 
-  const unpaidList = transactions.filter(t => t.paymentStatus !== 'PAID');
-  const isAllUnpaidSelected = unpaidList.length > 0 && unpaidList.every(t => selectedIds.includes(t.id));
-
-  function handleSelectAll() {
-    if (isAllUnpaidSelected) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(unpaidList.map(t => t.id));
-    }
+  function openConfirmModal(transaction) {
+    setConfirmModal({ open: true, transaction });
   }
 
-  function handleToggleSelect(id) {
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
-  }
-
-  async function handleBatchMarkPaid() {
-    if (selectedIds.length === 0) return;
-    if (!confirm(`Selesaikan ${selectedIds.length} transaksi yang dipilih (tandai LUNAS)?`)) return;
-    setBatchUpdating(true);
+  async function handleConfirmSelesaikan() {
+    if (!confirmModal.transaction) return;
+    const tx = confirmModal.transaction;
+    setUpdatingId(tx.id);
     try {
-      await Promise.all(
-        selectedIds.map(id =>
-          fetch(`/api/transactions/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paymentStatus: 'PAID' }),
-          })
-        )
-      );
-      setSelectedIds([]);
-      await loadData();
-    } catch {
-      alert('Terjadi kesalahan saat memproses transaksi');
-    } finally {
-      setBatchUpdating(false);
-    }
-  }
-
-  async function handleTogglePaymentStatus(transaction) {
-    const newStatus = transaction.paymentStatus === 'PAID' ? 'UNPAID' : 'PAID';
-    const confirmMsg = newStatus === 'PAID'
-      ? `Selesaikan transaksi ${transaction.invoiceNo} (tandai LUNAS)?`
-      : `Kembalikan transaksi ${transaction.invoiceNo} menjadi BELUM LUNAS?`;
-
-    if (!confirm(confirmMsg)) return;
-
-    setUpdatingId(transaction.id);
-    try {
-      const res = await fetch(`/api/transactions/${transaction.id}`, {
+      const res = await fetch(`/api/transactions/${tx.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentStatus: newStatus }),
+        body: JSON.stringify({ paymentStatus: 'PAID' }),
       });
       if (!res.ok) {
-        alert('Gagal memperbarui status transaksi');
+        const data = await res.json();
+        alert(data.error || 'Gagal menyelesaikan transaksi');
         return;
       }
-      setSelectedIds(prev => prev.filter(x => x !== transaction.id));
+      setConfirmModal({ open: false, transaction: null });
       await loadData();
-      if (detailModal.open && detailModal.transaction?.id === transaction.id) {
+      if (detailModal.open && detailModal.transaction?.id === tx.id) {
         setDetailModal(prev => ({
           ...prev,
-          transaction: { ...prev.transaction, paymentStatus: newStatus },
+          transaction: { ...prev.transaction, paymentStatus: 'PAID' },
         }));
       }
     } catch {
@@ -151,43 +109,6 @@ export default function TransactionsPage() {
         <button className={`tab ${tab === 'PURCHASE' ? 'active' : ''}`} onClick={() => setTab('PURCHASE')}>Pembelian</button>
       </div>
 
-      {selectedIds.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '10px 16px',
-            marginBottom: 16,
-            background: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
-            borderRadius: 'var(--radius-md)',
-          }}
-        >
-          <span style={{ fontSize: 13, fontWeight: 500, color: '#34d399' }}>
-            {selectedIds.length} transaksi belum lunas dipilih
-          </span>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => setSelectedIds([])}
-              disabled={batchUpdating}
-            >
-              Batal
-            </button>
-            <button
-              className="btn btn-success btn-sm"
-              onClick={handleBatchMarkPaid}
-              disabled={batchUpdating}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-            >
-              <CheckCircle size={14} />
-              {batchUpdating ? 'Memproses...' : 'Selesaikan Transaksi Terpilih'}
-            </button>
-          </div>
-        </div>
-      )}
-
       <div className="card">
         {loading ? (
           <div className="loading-container"><span className="spinner" /></div>
@@ -196,16 +117,6 @@ export default function TransactionsPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th style={{ width: 44, textAlign: 'center' }}>
-                    <input
-                      type="checkbox"
-                      checked={isAllUnpaidSelected}
-                      onChange={handleSelectAll}
-                      title="Pilih semua transaksi belum lunas"
-                      disabled={unpaidList.length === 0}
-                      style={{ cursor: unpaidList.length === 0 ? 'default' : 'pointer', width: 16, height: 16, accentColor: '#10b981' }}
-                    />
-                  </th>
                   <th>No Invoice</th>
                   <th>Tanggal</th>
                   <th>{tab === 'SALE' ? 'Pelanggan' : 'Supplier'}</th>
@@ -217,87 +128,63 @@ export default function TransactionsPage() {
               </thead>
               <tbody>
                 {transactions.length === 0 ? (
-                  <tr><td colSpan={8}>
+                  <tr><td colSpan={7}>
                     <div className="empty-state">
                       <p className="empty-state-text">Belum ada transaksi</p>
                     </div>
                   </td></tr>
                 ) : transactions.map(t => (
                   <tr key={t.id}>
-                    <td style={{ textAlign: 'center' }}>
-                      {t.paymentStatus === 'PAID' ? (
-                        <span title="Transaksi sudah lunas" style={{ color: '#10b981', fontSize: 15 }}>✓</span>
-                      ) : (
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.includes(t.id)}
-                          onChange={() => handleToggleSelect(t.id)}
-                          title="Centang untuk memilih / menyelesaikan transaksi ini"
-                          style={{ cursor: 'pointer', width: 16, height: 16, accentColor: '#10b981' }}
-                        />
-                      )}
-                    </td>
                     <td><span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--blue-400)' }}>{t.invoiceNo}</span></td>
                     <td style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{formatDate(t.date)}</td>
                     <td>{tab === 'SALE' ? (t.customer?.name || 'Walk-in') : (t.supplier?.name || '-')}</td>
                     <td>{formatCurrency(t.subtotal)}</td>
                     <td style={{ fontWeight: 600 }}>{formatCurrency(t.total)}</td>
                     <td>
-                      <label
+                      <span
+                        className={`badge ${t.paymentStatus === 'PAID' ? 'badge-success' : 'badge-warning'}`}
                         style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          cursor: 'pointer',
                           padding: '4px 10px',
-                          borderRadius: 'var(--radius-sm)',
-                          background: t.paymentStatus === 'PAID' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
-                          border: `1px solid ${t.paymentStatus === 'PAID' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
-                          userSelect: 'none',
-                          transition: 'var(--transition)',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          letterSpacing: '0.04em',
+                          textTransform: 'uppercase',
                         }}
-                        title={t.paymentStatus === 'PAID' ? 'Klik centang untuk ubah status' : 'Centang untuk menyelesaikan transaksi (LUNAS)'}
                       >
-                        <input
-                          type="checkbox"
-                          checked={t.paymentStatus === 'PAID'}
-                          disabled={updatingId === t.id}
-                          onChange={() => handleTogglePaymentStatus(t)}
-                          style={{
-                            cursor: 'pointer',
-                            width: 15,
-                            height: 15,
-                            accentColor: '#10b981',
-                            margin: 0,
-                          }}
-                        />
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            letterSpacing: '0.04em',
-                            color: t.paymentStatus === 'PAID' ? '#34d399' : '#fbbf24',
-                            textTransform: 'uppercase',
-                          }}
-                        >
-                          {t.paymentStatus === 'PAID' ? 'Lunas' : 'Belum Lunas'}
-                        </span>
-                      </label>
+                        {t.paymentStatus === 'PAID' ? 'LUNAS' : 'BELUM LUNAS'}
+                      </span>
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                         <button className="btn btn-ghost btn-icon btn-sm" onClick={() => viewDetail(t.id)} title="Detail"><Eye size={14} /></button>
                         <button className="btn btn-ghost btn-icon btn-sm" onClick={() => generateInvoicePDF({ ...t, items: t.items || [] }, business)} title="Cetak"><Printer size={14} /></button>
-                        {t.paymentStatus !== 'PAID' && (
+                        {t.paymentStatus !== 'PAID' ? (
                           <button
                             className="btn btn-sm btn-success"
-                            style={{ padding: '4px 8px', fontSize: 11, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                            onClick={() => handleTogglePaymentStatus(t)}
+                            style={{ padding: '4px 10px', fontSize: 11, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            onClick={() => openConfirmModal(t)}
                             disabled={updatingId === t.id}
-                            title="Centang untuk menyelesaikan transaksi"
+                            title="Selesaikan Transaksi"
                           >
                             <Check size={13} /> Selesaikan
                           </button>
+                        ) : (
+                          <span
+                            style={{
+                              color: '#10b981',
+                              fontSize: 11,
+                              fontWeight: 700,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 3,
+                              padding: '3px 8px',
+                              background: 'rgba(16, 185, 129, 0.1)',
+                              borderRadius: 'var(--radius-sm)',
+                              border: '1px solid rgba(16, 185, 129, 0.25)',
+                            }}
+                          >
+                            <Check size={12} /> LUNAS
+                          </span>
                         )}
                       </div>
                     </td>
@@ -308,6 +195,60 @@ export default function TransactionsPage() {
           </div>
         )}
       </div>
+
+      {/* Custom Confirmation Modal */}
+      <Modal
+        isOpen={confirmModal.open}
+        onClose={() => !updatingId && setConfirmModal({ open: false, transaction: null })}
+        title="Konfirmasi Pelunasan Transaksi"
+      >
+        {confirmModal.transaction && (
+          <>
+            <div className="modal-body" style={{ textAlign: 'center', padding: '16px 8px 24px' }}>
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: '50%',
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  color: '#10b981',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                }}
+              >
+                <CheckCircle size={30} />
+              </div>
+              <h4 style={{ fontSize: 17, fontWeight: 600, marginBottom: 8, color: 'var(--text-primary)' }}>
+                Selesaikan Transaksi Ini?
+              </h4>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, maxWidth: 380, margin: '0 auto' }}>
+                Transaksi <strong style={{ color: 'var(--blue-400)', fontFamily: 'monospace' }}>{confirmModal.transaction.invoiceNo}</strong> sebesar{' '}
+                <strong style={{ color: 'var(--text-primary)' }}>{formatCurrency(confirmModal.transaction.total)}</strong> akan ditandai sebagai <strong style={{ color: '#10b981' }}>LUNAS</strong> dan otomatis tercatat ke laporan <strong>Keuangan</strong>.
+              </p>
+            </div>
+            <div className="modal-footer" style={{ justifyContent: 'center', gap: 12 }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setConfirmModal({ open: false, transaction: null })}
+                disabled={Boolean(updatingId)}
+              >
+                Batal
+              </button>
+              <button
+                className="btn btn-success"
+                onClick={handleConfirmSelesaikan}
+                disabled={Boolean(updatingId)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 130, justifyContent: 'center' }}
+              >
+                <Check size={16} /> {updatingId ? 'Memproses...' : 'Ya, Selesaikan'}
+              </button>
+            </div>
+          </>
+        )}
+      </Modal>
 
       {/* Detail Modal */}
       <Modal
@@ -379,23 +320,14 @@ export default function TransactionsPage() {
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setDetailModal({ open: false, transaction: null })}>Tutup</button>
-              {detailModal.transaction.paymentStatus !== 'PAID' ? (
+              {detailModal.transaction.paymentStatus !== 'PAID' && (
                 <button
                   className="btn btn-success"
-                  onClick={() => handleTogglePaymentStatus(detailModal.transaction)}
-                  disabled={updatingId === detailModal.transaction.id}
+                  onClick={() => openConfirmModal(detailModal.transaction)}
+                  disabled={Boolean(updatingId)}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
                 >
-                  <CheckCircle size={14} /> {updatingId === detailModal.transaction.id ? 'Memproses...' : 'Selesaikan Transaksi (Lunas)'}
-                </button>
-              ) : (
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => handleTogglePaymentStatus(detailModal.transaction)}
-                  disabled={updatingId === detailModal.transaction.id}
-                  style={{ fontSize: 12 }}
-                >
-                  Ubah ke Belum Lunas
+                  <Check size={14} /> Selesaikan Transaksi (Lunas)
                 </button>
               )}
               <button className="btn btn-primary" onClick={() => generateInvoicePDF(detailModal.transaction, business)}>

@@ -106,6 +106,43 @@ export async function POST(request) {
         }
       }
 
+      // Record to Finance if paymentStatus is PAID
+      if (paymentStatus === 'PAID') {
+        const isSale = type === 'SALE';
+        const financeType = isSale ? 'INCOME' : 'EXPENSE';
+
+        let category;
+        if (isSale) {
+          category = await tx.category.findFirst({
+            where: { type: 'INCOME', name: { contains: 'Penjualan', mode: 'insensitive' } },
+          }) || await tx.category.findFirst({ where: { type: 'INCOME' } });
+          if (!category) {
+            category = await tx.category.create({ data: { name: 'Penjualan Produk', type: 'INCOME' } });
+          }
+        } else {
+          category = await tx.category.findFirst({
+            where: { type: 'EXPENSE', name: { contains: 'Operasional', mode: 'insensitive' } },
+          }) || await tx.category.findFirst({ where: { type: 'EXPENSE' } });
+          if (!category) {
+            category = await tx.category.create({ data: { name: 'Operasional', type: 'EXPENSE' } });
+          }
+        }
+
+        const party = transaction.customer?.name || transaction.supplier?.name || '';
+        const desc = `${isSale ? 'Penjualan' : 'Pembelian'} ${transaction.invoiceNo}${party ? ' - ' + party : ''}`;
+
+        await tx.finance.create({
+          data: {
+            userId: parseInt(session.user.id),
+            type: financeType,
+            categoryId: category.id,
+            amount: total,
+            date: date ? new Date(date) : new Date(),
+            description: desc,
+          },
+        });
+      }
+
       return transaction;
     });
 
