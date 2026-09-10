@@ -83,6 +83,7 @@ async function main() {
     prisma.category.create({ data: { name: 'Snack & Makanan Ringan', type: 'PRODUCT' } }),
     prisma.category.create({ data: { name: 'Kebersihan & Perawatan', type: 'PRODUCT' } }),
     prisma.category.create({ data: { name: 'Alat Tulis & Kantor', type: 'PRODUCT' } }),
+    prisma.category.create({ data: { name: 'Lainnya', type: 'PRODUCT' } }),
   ]);
 
   const expenseCategories = await Promise.all([
